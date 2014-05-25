@@ -5,6 +5,7 @@ import multiprocessing
 import os
 from recognize import MicrophoneRecognizer
 import MySQLdb
+import timeit
 
 class FingerMusics(object):
     def __init__(self, config):
@@ -24,7 +25,6 @@ class FingerMusics(object):
         if self.limit == -1: # for JSON compatibility
             self.limit = None
 
-
     # get songs previously indexed
         self.songs = self.db.get_songs()
         self.songnames_set = set()  # to know which ones we've computed before
@@ -32,6 +32,8 @@ class FingerMusics(object):
             song_name = song[self.db.FIELD_SONGNAME]
             self.songnames_set.add(song_name)
             print "Added: %s to the set of fingerprinted songs..." % song_name
+
+        print self.songnames_set
 
     def fingerprint_directory(self, path, extensions, nprocesses=None):
 
@@ -52,11 +54,13 @@ class FingerMusics(object):
             #print hashes
             sid = self.db.insert_song(song_name)
             self.db.insert_hashes(sid, hashes)
+            self.db.set_song_fingerprinted(sid)
 
     def fingerprint_file(self, filepath, song_name=None):
         song_name, hashes = _fingerprint_worker(filepath, self.limit, song_name=song_name)
         sid = self.db.insert_song(song_name)
         self.db.insert_hashes(sid, hashes)
+        self.db.set_song_fingerprinted(sid)
 
     def find_matches(self, samples, Fs=fingerprint.DEFAULT_FS):
         hashes = fingerprint.fingerprint(samples, Fs=Fs)
@@ -130,9 +134,10 @@ def _fingerprint_worker(filename, limit=None, song_name=None):
 
 pas = raw_input('Input your MYSQLdb password\n')
 
-db = MySQLdb.connect(user="root",passwd=pas)
+start = timeit.default_timer()
+'''db = MySQLdb.connect(user="root",passwd=pas)
 cursor = db.cursor()
-cursor.execute('CREATE DATABASE IF NOT EXISTS mymusic')
+cursor.execute('CREATE DATABASE IF NOT EXISTS mymusic')'''
 
 config = {
 	"database": {
@@ -147,3 +152,5 @@ musics = FingerMusics(config)
 musics.fingerprint_directory("music", [".mp3"])
 
 print musics.db.get_num_fingerprints()
+stop = timeit.default_timer()
+print 'Time : ' + str(stop - start)
