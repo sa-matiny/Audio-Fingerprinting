@@ -31,6 +31,8 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS, wsize=DEFAULT_WINDOW_SIZE, wrati
         Fs=Fs,
         window=mlab.window_hanning,
         noverlap=int(wsize * wratio))[0]
+    
+    #DCT will added
 
     # apply log transform since specgram() returns linear array
     arr2D = 10 * np.log10(arr2D)
