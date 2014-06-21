@@ -4,7 +4,6 @@ from scipy.ndimage.filters import maximum_filter
 from scipy.ndimage.morphology import (generate_binary_structure,iterate_structure, binary_erosion)
 from scipy.fftpack import dct
 import hashlib
-from scipy.signal import butter, lfilter
 
 
 IDX_FREQ_I = 0
@@ -26,7 +25,7 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS, wsize=DEFAULT_WINDOW_SIZE, wrati
     locally sensitive hashes.
     """
 
-    #channel_samples = butter_bandpass_filter(channel_samples, 318,2000 , Fs, order=5)
+
     # FFT the signal and extract frequency components
     arr2D = mlab.specgram(
         channel_samples,
@@ -41,22 +40,13 @@ def fingerprint(channel_samples, Fs=DEFAULT_FS, wsize=DEFAULT_WINDOW_SIZE, wrati
     arr2D[arr2D == -np.inf] = 0  # replace infs with zeros
 
     # find local maxima
-    local_maxima = get_2D_peaks(arr2D, amp_min=amp_min)
+    local_maxima = get_2D_peaks(arr2D, plot=False, amp_min=amp_min)
 
     # return hashes
     return generate_hashes(local_maxima, fan_value=fan_value)
 
-def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
-    nyq = 0.5 * fs
-    low = lowcut / nyq
-    high = highcut / nyq
- 
-    b, a = butter(order, [low, high], btype='band')
-    y = lfilter(b, a, data)
-    return y
 
-
-def get_2D_peaks(arr2D, amp_min=DEFAULT_AMP_MIN):
+def get_2D_peaks(arr2D, plot=False, amp_min=DEFAULT_AMP_MIN):
     struct = generate_binary_structure(2, 1)
     neighborhood = iterate_structure(struct, PEAK_NEIGHBORHOOD_SIZE)
 
